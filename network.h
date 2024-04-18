@@ -1,3 +1,8 @@
+#ifndef _NETWORK_H_
+#define _NETWORK_H_
+
+#include "structures.h"
+
 /**
  * PRE: serverIP : a valid IP address
  *      serverPort: a valid port number
@@ -21,3 +26,5 @@ void disconnect_players(Player *tabPlayers, int nbPlayers);
  * RES:  return socket file descriptor
  */
 int initSocketServer(int port);
+
+#endif
