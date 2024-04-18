@@ -17,6 +17,6 @@ typedef struct Message
     int messageInt;
     int code;
     bool tilePlaced;
-}
+} Message
 
 #endif
