@@ -1,6 +1,8 @@
 #ifndef _IPC_H_
 #define _IPC_H_
 
+#include "utils_v1.h"
+#include "structures.h"
 /**
  * 
  * 
