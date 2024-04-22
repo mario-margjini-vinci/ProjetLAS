@@ -14,7 +14,13 @@
 
 int main(int argc, char *argv[])
 {
+    if (argc != 2){
+        printf("Pour utiliser l'appli, veuillez rentrer en paramètre le numéro de port");
+        exit(1);
+    }
     /* PARTIE INSCRIPTION */
+    int serverPort = atoi(argv[1]);
+
     printf("Bienvenue dans le programe d'inscription au serveur de jeu\n");
     printf("Pour participer entrez votre nom :\n");
     Message msg;
@@ -22,7 +28,7 @@ int main(int argc, char *argv[])
     msg.messageText[ret - 1] = '\0';
     msg.code = INSCRIPTION_REQUEST;
 
-    int sockfd = initSocketClient(SERVER_IP, SERVER_PORT);
+    int sockfd = initSocketClient(SERVER_IP, serverPort);
     swrite(sockfd, &msg, sizeof(msg));
 
     sread(sockfd, &msg, sizeof(msg));
