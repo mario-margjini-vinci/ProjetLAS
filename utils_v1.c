@@ -84,16 +84,7 @@ char* readLine () {
 
    // Cas d'erreur ou de fin de fichier
    return NULL;
-}
-
-//******************************************************
-// AFFICHAGE DE MESSAGES EN COULEUR
-//******************************************************
-
-void printOk (char *s) {
-    colorOn(1,GREEN_TEXT);
-    fprintf (stdout,"%s", s);
-    colorOff();
+}Player tabPlayers[MAX_PLAYERS];
 }
 
 void printError (char *s) {
