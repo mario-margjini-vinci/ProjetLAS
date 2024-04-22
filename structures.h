@@ -3,6 +3,15 @@
 
 #define MAX_PSEUDO 256
 #define MAX_TEXT 256
+#define SERVER_PORT 9501
+#define SERVER_IP "127.0.0.1" /* localhost */
+
+typedef enum
+{
+  INSCRIPTION_REQUEST = 10,
+  INSCRIPTION_OK = 11,
+  INSCRIPTION_KO = 12
+} Code;
 
 typedef struct Player
 {
