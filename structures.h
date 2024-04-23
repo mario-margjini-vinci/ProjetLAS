@@ -1,6 +1,8 @@
 #ifndef _STRUCTURES_H_
 #define _STRUCTURES_H_
 
+#include <stdbool.h>
+
 #define MAX_PSEUDO 256
 #define MAX_TEXT 256
 
@@ -10,7 +12,7 @@ typedef enum
 {
   INSCRIPTION_REQUEST = 10,
   INSCRIPTION_OK = 11,
-  INSCRIPTION_KO = 12
+  INSCRIPTION_KO = 12,
 } Code;
 
 typedef struct Player

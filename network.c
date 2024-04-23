@@ -7,6 +7,9 @@
 #include "utils_v1.h"
 #include "structures.h"
 
+#define BACKLOG 5
+
+
 int initSocketClient(char *serverIP, int serverPort)
 {
 	int sockfd = ssocket();
