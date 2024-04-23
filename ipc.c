@@ -23,13 +23,13 @@ void createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers)
 
     
     
-   memcpy(&shm_players, &players, sizeof(players)*nbPlayers);
+   memcpy(&shm_players, p, sizeof(Player)*nbPlayers);
     
 
     printf("Les joueurs ont bien été copié dans la mémoire partagée!\n");
 
     
-    int detach_result = sshmdt(shm_players);
+    sshmdt(shm_players);
     printf("Mémoire partagée détachée !\n");
 }
 
@@ -42,7 +42,7 @@ Player* readPlayers(int shm_id) {
         exit(EXIT_FAILURE);
     }
 
-    Joueur* joueurs = (Joueur*) shared_memory;
+    Player* joueurs = shared_memory;
 
     if (shmdt(shared_memory) == -1) {
         perror("Erreur lors du détachement de la mémoire partagée");

@@ -25,6 +25,10 @@ void endServerHandler(int sig)
 }
 
 int main(int argc, char **argv){
+    if (argc < 2){
+        printf("Pour utiliser l'appli, veuillez rentrer en paramètre le numéro de port");
+        exit(1);
+    }
     int sockfd, newsockfd, i;
     Message msg;
     int ret;

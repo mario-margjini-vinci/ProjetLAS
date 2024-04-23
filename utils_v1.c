@@ -84,9 +84,7 @@ char* readLine () {
 
    // Cas d'erreur ou de fin de fichier
    return NULL;
-}Player tabPlayers[MAX_PLAYERS];
 }
-
 void printError (char *s) {
     colorOn(1,RED_TEXT);
     fprintf (stdout,"%s", s);
