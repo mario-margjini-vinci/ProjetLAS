@@ -8,7 +8,7 @@
  * 
  * 
  */
-void createPlayers(key_t key, size_t size, int shmflg);
+void createPlayers(key_t key, size_t size, int shmflg, Player * p, int nbrPlayers);
 
 /**
  * 
