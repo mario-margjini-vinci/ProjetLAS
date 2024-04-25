@@ -13,23 +13,23 @@
 void createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers) {
     int shm_id;
 
-    
+    //Créa mémoire
     shm_id = sshmget(key, size, shmflg);
     printf("Mémoire partagée créée avec succès !\n");
 
-    
+    //Attachement
     Player *shm_players = sshmat(shm_id);
     printf("Mémoire partagée attachée !\n");
 
     
-    
+    //Copie des joueurs dans la memémoire
    memcpy(&shm_players, &players, sizeof(players)*nbPlayers);
     
 
     printf("Les joueurs ont bien été copié dans la mémoire partagée!\n");
 
-    
-    int detach_result = sshmdt(shm_players);
+    //detachement
+    sshmdt(shm_players);
     printf("Mémoire partagée détachée !\n");
 }
 
@@ -42,7 +42,7 @@ Player* readPlayers(int shm_id) {
         exit(EXIT_FAILURE);
     }
 
-    Joueur* joueurs = (Joueur*) shared_memory;
+    Player * joueurs = shared_memory;
 
     if (shmdt(shared_memory) == -1) {
         perror("Erreur lors du détachement de la mémoire partagée");
@@ -51,3 +51,28 @@ Player* readPlayers(int shm_id) {
 
     return joueurs;
 }
+
+void destroyShm(int shm_id) {
+    sshmdelete(shm_id);
+    printf("Mémoire partagée supprimée avec succès !\n");
+}
+
+int initSemaphore(key_t key, int nsems, int perm, int val) {
+    
+    int sem_id = sem_create(key, nsems, perm, val);
+    printf("Ensemble de sémaphores initialisé avec succès !\n");
+
+    return sem_id;
+}
+
+
+
+void destroySemaphore(int sem_id) {
+    
+   sem_delete(sem_id);
+    printf("Sémaphores détruits avec succès !\n");
+}
+
+
+
+
