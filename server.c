@@ -17,11 +17,19 @@
 #define TIME_INSCRIPTION 30
 
 Player tabPlayers[MAX_PLAYERS];
+pid_t tabPids[MAX_PLAYERS];
+int tabPipes[MAX_PLAYERS][2];
 volatile sig_atomic_t end_inscriptions = 0;
 
 void endServerHandler(int sig)
 {
 	end_inscriptions = 1;
+}
+
+void childHandler(void *arg1,void* arg2){
+    
+
+
 }
 
 int main(int argc, char **argv){
@@ -81,6 +89,30 @@ int main(int argc, char **argv){
     }
 
     printf("FIN DES INSCRIPTIONS\n");
+	if (nbPlayers <= 1)
+	{
+		printf("PARTIE ANNULEE .. PAS ASSEZ DE JOUEURS\n");
+		msg.code = CANCEL_GAME;
+		for (i = 0; i < nbPlayers; i++)
+		{
+			swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
+		}
+		disconnect_players(tabPlayers, nbPlayers);
+		sclose(sockfd);
+		exit(0);
+	}
+	else
+	{
+		printf("PARTIE VA DEMARRER ... \n");
+		msg.code = START_GAME;
+		for (i = 0; i < nbPlayers; i++)
+			swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
+	}
+
+    for(int i = 0; i < nbPlayers; i++){
+        spipe(tabPipes[i]);
+        tabPids[i] = fork_and_run2(childHandler,tabPipes[i] ,tabPlayers[i].sockfd);
+    }
 
 
 }
