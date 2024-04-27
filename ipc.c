@@ -10,7 +10,7 @@
 #include "utils_v1.h"
 #include "structures.h" 
 
-void createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers) {
+int createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers) {
     int shm_id;
 
     //Créa mémoire
@@ -23,7 +23,7 @@ void createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers)
 
     
     //Copie des joueurs dans la memémoire
-   memcpy(&shm_players, &players, sizeof(players)*nbPlayers);
+    memcpy(&shm_players, &p, sizeof(Player)*nbPlayers);
     
 
     printf("Les joueurs ont bien été copié dans la mémoire partagée!\n");
@@ -31,6 +31,7 @@ void createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers)
     //detachement
     sshmdt(shm_players);
     printf("Mémoire partagée détachée !\n");
+    return shm_id;
 }
 
 

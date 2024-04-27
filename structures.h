@@ -14,7 +14,8 @@ typedef enum
   INSCRIPTION_OK = 11,
   INSCRIPTION_KO = 12,
   CANCEL_GAME = 13,
-  START_GAME = 14
+  START_GAME = 14,
+  TILE = 15
 } Code;
 
 typedef struct Player
