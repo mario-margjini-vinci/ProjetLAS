@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "game.h"
+#include "structures.h"
 #include "utils_v1.h"
 
 #define NB_TILES 40
@@ -77,4 +78,19 @@ void printTable(int* plate, int size){
         printf("| %d ", plate[i]);
     }
     printf("|\n");
+}
+
+void createRanking(Player** players, int size) {
+    int i, j;
+    for (i = 1; i < size; i++) {
+        Player* key = players[i];
+        j = i - 1;
+        // Déplacement des éléments du tableau[0..i-1], qui sont plus grands que la clé,
+        // vers une position à l'avant de leur position actuelle
+        while (j >= 0 && players[j]->score < key->score) {
+            players[j + 1] = players[j];
+            j = j - 1;
+        }
+        players[j + 1] = key;
+    }
 }
