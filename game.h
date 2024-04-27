@@ -10,7 +10,7 @@
  * 
  * 
  */
-int* initTiles(int nTiles);
+int* initRandomTiles(int nTiles);
 
 /**
  * 
@@ -28,7 +28,7 @@ int* initPlate(int size);
  * 
  * 
  */
-int placeTile(int pos, int tile, int** plate); // enlever le double étoile de int ?
+int placeTile(int pos, int tile, int* plate, int size); // enlever le double étoile de int ?
 
 /**
  * 
