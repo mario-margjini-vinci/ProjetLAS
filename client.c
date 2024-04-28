@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     else if (msg.code == INSCRIPTION_OK)
     {
         printf("Réponse du serveur : Inscription acceptée\n");
-        // int* plate = initPlate(PLATE_SIZE);
+        int* plate = initPlate(PLATE_SIZE);
         while(msg.code != END_GAME){
             sread(sockfd, &msg, sizeof(msg));
             if (msg.code == START_GAME){
@@ -56,10 +56,30 @@ int main(int argc, char *argv[])
             }
             else if (msg.code == TILE){
                 printf("Vous avez reçu la tuile %d\n", msg.messageInt);
+                printTable(plate, PLATE_SIZE);
+                printf("%s\n", "Entrez la position de cette tuile sur votre plateau:");
+                char* buffer = readLine();
+                int position = atoi(buffer);
+                int correctPos = placeTile(position, msg.messageInt, plate, PLATE_SIZE);
+                printf("La tuile a été placée à la position %d\n", correctPos);
                 msg.tilePlaced = true;
                 msg.code = TILE_PLACED;
                 swrite(sockfd, &msg, sizeof(msg));
             }
+        }
+        printf("%s\n", "La partie est terminée");
+        int score = getScore(plate, PLATE_SIZE);
+        printf("Votre score est de %d\n", score);
+
+        // envoie du score
+        msg.messageInt = score;
+        swrite(sockfd, &msg, sizeof(msg));
+
+        // lecture du classement
+        sread(sockfd, &msg, sizeof(msg));
+        printf("Voici le classement final:\n");
+        for (int i = 0; i<msg.messageInt; i++){
+            printf("%d)%s\n", (i+1), msg.players[i].pseudo);
         }
 
     }

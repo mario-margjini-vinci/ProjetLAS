@@ -36,7 +36,7 @@ int* initRandomTiles(int nTiles){
     }
 
     for (int i = 0; i < NB_TILES_TO_PLAY; i++){
-        int r = randomIntBetween(0, NB_TILES);
+        int r = randomIntBetween(0, NB_TILES-1);
         if (tempTiles[r] != 0){
             randomTiles[i] = tempTiles[r];
             tempTiles[r] = 0;
@@ -51,8 +51,8 @@ int placeTile(int pos, int tile, int* plate, int size){
     while (plate[pos%size] != 0){
         pos++;
     }
-    plate[pos] = tile;
-    return pos;
+    plate[pos%size] = tile;
+    return pos%size;
 }
 
 
@@ -61,7 +61,7 @@ int getScore(int* plate, int size){
     int suite = 1;
     for (int i = 1; i < size; ++i)
     {
-        if (plate[i]>plate[i-1])
+        if (plate[i]>plate[i-1] || plate[i] == 31 || plate[i-1] == 31)
         {
             suite++;
         }

@@ -23,7 +23,7 @@ int createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers) 
 
     
     //Copie des joueurs dans la memémoire
-    memcpy(&shm_players, &p, sizeof(Player)*nbPlayers);
+    memcpy(shm_players, p, sizeof(Player)*nbPlayers);
     
 
     printf("Les joueurs ont bien été copié dans la mémoire partagée!\n");

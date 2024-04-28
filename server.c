@@ -31,9 +31,10 @@ void endServerHandler(int sig)
     end_inscriptions = 1;
 }
 
-void childHandler(void *arg1)
+void childHandler(void *arg1, void *arg2)
 {
     Player *player = arg1;
+    int *nbPlayers = arg2;
     sclose(player->pipefdPC[1]);
     sclose(player->pipefdCP[0]);
     int endGame = 0;
@@ -44,6 +45,7 @@ void childHandler(void *arg1)
         sread(player->pipefdPC[0], &msgChild, sizeof(msgChild));
         if (msgChild.code == TILE)
         {
+            // envoie de la tuile
             swrite(player->sockfd, &msgChild, sizeof(msgChild));
             sread(player->sockfd, &msgChild, sizeof(msgChild));
             swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));
@@ -51,9 +53,13 @@ void childHandler(void *arg1)
         else if (msgChild.code == END_GAME)
         {
             endGame = 1;
+            // envoie du code de fin de partie
+            swrite(player->sockfd, &msgChild, sizeof(msgChild));
         }
     }
+    // lecture du score
     sread(player->sockfd, &msgChild, sizeof(msgChild));
+    // envoie du score
     swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));
     int shm_id = sshmget(SHM_KEY, sizeof(Player) * MAX_PLAYERS, PERM);
     int sem_id = sem_get(SEM_KEY, 1);
@@ -61,6 +67,8 @@ void childHandler(void *arg1)
     Player *shm_players = readPlayers(shm_id);
     msgChild.players = shm_players;
     msgChild.code = RANKING;
+    msgChild.messageInt = *nbPlayers;
+    // envoie du classement
     swrite(player->sockfd, &msgChild, sizeof(msgChild));
     sem_up0(sem_id);
 
@@ -161,7 +169,7 @@ int main(int argc, char **argv)
             spipe(tabPlayers[i].pipefdPC);
             spipe(tabPlayers[i].pipefdCP);
 
-            tabPids[i] = fork_and_run1(childHandler, &tabPlayers[i]);
+            tabPids[i] = fork_and_run2(childHandler, &tabPlayers[i], &nbPlayers);
 
             fds[i].fd = tabPlayers[i].pipefdCP[0];
             fds[i].events = POLLIN;
@@ -171,6 +179,10 @@ int main(int argc, char **argv)
         }
         // ssigprocmask(SIG_BLOCK, &blocked, NULL);
         // boucle du jeu
+
+        // creation de la memoire partagée et des sémaphores
+        int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
+        int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
         int *tabTiles = initRandomTiles(TILE_NUMBER);
         printTable(tabTiles, NB_TILES);
         for (int i = 0; i < NB_TILES; i++)
@@ -188,27 +200,29 @@ int main(int argc, char **argv)
                 ret = spoll(fds, nbPlayers, 1000);
                 nbResponse += ret;
             }
+            for (int k = 0; k < nbPlayers; k++){
+                sread(tabPlayers[k].pipefdCP[0], &msg, sizeof(msg));
+            }
         }
+        Player* shmPlayers = readPlayers(shm_id);
         for (int i = 0; i < nbPlayers; i++)
         {
             msg.code = END_GAME;
             swrite(tabPlayers[i].pipefdPC[1], &msg, sizeof(msg));
+            // reception des scores
             sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
-            tabPlayers[i].score = msg.messageInt;
+            shmPlayers[i].score = msg.messageInt;
         }
-        // creation de la memoire partagée et des sémaphores
-        int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
-        int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
 
-        Player *shm_players = readPlayers(shm_id);
+        // Player *shm_players = readPlayers(shm_id);
 
-        createRanking(&shm_players, nbPlayers);
+        createRanking(&shmPlayers, nbPlayers);
         sem_up0(sem_id);
 
         // desallocation des ressources
         disconnect_players(tabPlayers, nbPlayers);
         destroyShm(shm_id);
-        destroySemaphore(sem_id)
+        destroySemaphore(sem_id);
         end_inscriptions = 0;
     }
 }
