@@ -9,8 +9,11 @@
 #include <sys/socket.h>
 
 #include "structures.h"
+#include "game.h"
 #include "utils_v1.h"
 #include "network.h"
+
+#define PLATE_SIZE 20
 
 int main(int argc, char *argv[])
 {
@@ -40,9 +43,26 @@ int main(int argc, char *argv[])
     else if (msg.code == INSCRIPTION_OK)
     {
         printf("Réponse du serveur : Inscription acceptée\n");
+        // int* plate = initPlate(PLATE_SIZE);
+        while(msg.code != END_GAME){
+            sread(sockfd, &msg, sizeof(msg));
+            if (msg.code == START_GAME){
+                printf("%s\n", "La partie commence");
+            }
+            else if (msg.code == CANCEL_GAME){
+                printf("%s\n", "La partie est annulée");
+                sclose(sockfd);
+                exit(0);
+            }
+            else if (msg.code == TILE){
+                printf("Vous avez reçu la tuile %d\n", msg.messageInt);
+                msg.tilePlaced = true;
+                msg.code = TILE_PLACED;
+                swrite(sockfd, &msg, sizeof(msg));
+            }
+        }
+
     }
-    
-    /* SI INSCRIPTION REUSSIE = LANCER PARTIE DE JEU */
 
     sclose(sockfd); //le fermer à la fin de la partie
     return 0;

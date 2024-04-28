@@ -14,6 +14,7 @@
 
 #define MAX_WAITING 100
 #define MAX_PLAYERS 10
+#define NB_TILES 20
 #define TIME_INSCRIPTION 30
 #define TILE_NUMBER 20
 #define SHM_KEY 1234
@@ -23,7 +24,7 @@
 
 Player tabPlayers[MAX_PLAYERS];
 pid_t tabPids[MAX_PLAYERS];
-int tabTiles[TILE_NUMBER];
+// int tabTiles[TILE_NUMBER];
 volatile sig_atomic_t end_inscriptions = 0;
 
 void endServerHandler(int sig)
@@ -40,11 +41,11 @@ void childHandler(void *arg1){
     while(!endGame){
         //Lecture du pipe
         sread(player->pipefdPC[0], &msgChild, sizeof(msgChild));
-        if(msg.code == TILE){
+        if(msgChild.code == TILE){
             swrite(player->sockfd, &msgChild, sizeof(msgChild));
             sread(player->sockfd, &msgChild, sizeof(msgChild));
             swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));    
-        }else if(msg.code == END_GAME){
+        }else if(msgChild.code == END_GAME){
             endGame = 1;
         }       
     }
@@ -113,7 +114,6 @@ int main(int argc, char **argv){
                 }
                 ret = swrite(newsockfd, &msg, sizeof(msg));
 				printf("Nb Inscriptions : %i\n", nbPlayers);
-                printf("%i", ret);
 
             }
         }
@@ -146,24 +146,26 @@ int main(int argc, char **argv){
         spipe(tabPlayers[i].pipefdPC);
         spipe(tabPlayers[i].pipefdCP);
 
-        tabPids[i] = fork_and_run1(childHandler,tabPlayers[i]);
+        tabPids[i] = fork_and_run1(childHandler, &tabPlayers[i]);
         
-        fds[i].fd = tabPlayers[i].;
+        fds[i].fd = tabPlayers[i].pipefdCP[0];
 		fds[i].events = POLLIN;
 
         sclose(tabPlayers[i].pipefdPC[0]);
         sclose(tabPlayers[i].pipefdCP[1]);
     }
     //boucle du jeu
-    tabTiles = initRandomTiles(TILE_NUMBER);
+    int* tabTiles = initRandomTiles(TILE_NUMBER);
+    printTable(tabTiles, NB_TILES);
     for(int i = 0; i < NB_TILES; i++){
         int nbResponse = 0;
         for(int j = 0; j < nbPlayers; j++){
             msg.messageInt = tabTiles[i];
             msg.code = TILE;
-            swrite(tabPlayers[j].pipefdPC[1], &msg, sizeof(tabTiles[i]));
+            swrite(tabPlayers[j].pipefdPC[1], &msg, sizeof(msg));
         }
-        while(nbResponse<NB_PLAYERS){
+        printf("La tuile envoyée est %d\n", msg.messageInt);
+        while(nbResponse<nbPlayers){
             ret = spoll(fds, nbPlayers, 1000);
             nbResponse += ret;
         }
@@ -183,6 +185,4 @@ int main(int argc, char **argv){
 
     createRanking(&shm_players, nbPlayers);
     sem_up0(sem_id);
-
-
 }
