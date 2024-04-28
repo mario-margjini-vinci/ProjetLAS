@@ -34,4 +34,5 @@ clear:
 
 clean:
 	rm -f *.o
-	rm -f $(All)
+	rm -f server
+	rm -f client
