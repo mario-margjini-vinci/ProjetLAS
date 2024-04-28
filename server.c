@@ -23,7 +23,6 @@
 
 Player tabPlayers[MAX_PLAYERS];
 pid_t tabPids[MAX_PLAYERS];
-// int tabTiles[TILE_NUMBER];
 volatile sig_atomic_t end_inscriptions = 0;
 
 void endServerHandler(int sig)
@@ -181,8 +180,6 @@ int main(int argc, char **argv)
         // boucle du jeu
 
         // creation de la memoire partagée et des sémaphores
-        int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
-        int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
         int *tabTiles = initRandomTiles(TILE_NUMBER);
         printTable(tabTiles, NB_TILES);
         for (int i = 0; i < NB_TILES; i++)
@@ -204,19 +201,21 @@ int main(int argc, char **argv)
                 sread(tabPlayers[k].pipefdCP[0], &msg, sizeof(msg));
             }
         }
-        Player* shmPlayers = readPlayers(shm_id);
         for (int i = 0; i < nbPlayers; i++)
         {
             msg.code = END_GAME;
             swrite(tabPlayers[i].pipefdPC[1], &msg, sizeof(msg));
             // reception des scores
             sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
-            shmPlayers[i].score = msg.messageInt;
+            // shm_players[i].score = msg.messageInt;
         }
 
-        // Player *shm_players = readPlayers(shm_id);
 
-        createRanking(&shmPlayers, nbPlayers);
+        int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
+        int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
+        Player *shm_players = readPlayers(shm_id);
+
+        createRanking(&shm_players, nbPlayers);
         sem_up0(sem_id);
 
         // desallocation des ressources
