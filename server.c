@@ -48,9 +48,19 @@ void childHandler(void *arg1){
             endGame = 1;
         }       
     }
-
-
-
+    sread(player->sockfd, &msgChild, sizeof(msgChild));
+    swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));
+    int shm_id = sshmget(SHM_KEY, sizeof(Player) * MAX_PLAYERS, PERM);
+    int sem_id = sem_get(SEM_KEY, 1);
+    sem_down0(sem_id);
+    Player* shm_players = readPlayers(shm_id);
+    msgChild.players = shm_players;
+    msgChild.code = RANKING;
+    swrite(player->sockfd, &msgChild, sizeof(msgChild));
+    
+    sclose(player->sockfd);
+    sclose(player->pipefdPC[0]);
+    sclose(player->pipefdCP[1]);
 }
 
 int main(int argc, char **argv){
@@ -73,7 +83,7 @@ int main(int argc, char **argv){
     int nbPlayers = 0;
 
     alarm(TIME_INSCRIPTION);
-
+    //Inscription des joueurs
     while (!end_inscriptions)
     {
         newsockfd = accept(sockfd,NULL,NULL);
@@ -129,21 +139,23 @@ int main(int argc, char **argv){
 		for (i = 0; i < nbPlayers; i++)
 			swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
 	}
-
+    //initialisation des pipes et des processus
     for(int i = 0; i < nbPlayers; i++){
-        fds[i].fd = tabPlayers[i].sockfd;
-		fds[i].events = POLLIN;
+        
 
         spipe(tabPlayers[i].pipefdPC);
         spipe(tabPlayers[i].pipefdCP);
 
         tabPids[i] = fork_and_run1(childHandler,tabPlayers[i]);
+        
+        fds[i].fd = tabPlayers[i].;
+		fds[i].events = POLLIN;
 
         sclose(tabPlayers[i].pipefdPC[0]);
         sclose(tabPlayers[i].pipefdCP[1]);
     }
-    
-    tabTiles = initTiles(TILE_NUMBER);
+    //boucle du jeu
+    tabTiles = initRandomTiles(TILE_NUMBER);
     for(int i = 0; i < NB_TILES; i++){
         int nbResponse = 0;
         for(int j = 0; j < nbPlayers; j++){
@@ -163,13 +175,14 @@ int main(int argc, char **argv){
         tabPlayers[i].score = msg.messageInt;
         
     }
-
+    //creation de la memoire partagée et des sémaphores
     int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
     int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
 
     Player* shm_players = readPlayers(shm_id);
 
-    for
+    createRanking(&shm_players, nbPlayers);
+    sem_up0(sem_id);
 
 
 }

@@ -15,7 +15,10 @@ typedef enum
   INSCRIPTION_KO = 12,
   CANCEL_GAME = 13,
   START_GAME = 14,
-  TILE = 15
+  TILE = 15,
+  END_GAME = 16,
+  RANKING = 17,
+  TILE_PLACED = 18,
 } Code;
 
 typedef struct Player
@@ -33,6 +36,7 @@ typedef struct Message
     int messageInt;
     int code;
     bool tilePlaced;
+    Player *players;
 } Message;
 
 #endif
