@@ -21,7 +21,6 @@
 #define SEM_KEY 619
 #define PERM 0666
 
-
 Player tabPlayers[MAX_PLAYERS];
 pid_t tabPids[MAX_PLAYERS];
 // int tabTiles[TILE_NUMBER];
@@ -29,43 +28,51 @@ volatile sig_atomic_t end_inscriptions = 0;
 
 void endServerHandler(int sig)
 {
-	end_inscriptions = 1;
+    end_inscriptions = 1;
 }
 
-void childHandler(void *arg1){
+void childHandler(void *arg1)
+{
     Player *player = arg1;
     sclose(player->pipefdPC[1]);
     sclose(player->pipefdCP[0]);
     int endGame = 0;
     Message msgChild;
-    while(!endGame){
-        //Lecture du pipe
+    while (!endGame)
+    {
+        // Lecture du pipe
         sread(player->pipefdPC[0], &msgChild, sizeof(msgChild));
-        if(msgChild.code == TILE){
+        if (msgChild.code == TILE)
+        {
             swrite(player->sockfd, &msgChild, sizeof(msgChild));
             sread(player->sockfd, &msgChild, sizeof(msgChild));
-            swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));    
-        }else if(msgChild.code == END_GAME){
+            swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));
+        }
+        else if (msgChild.code == END_GAME)
+        {
             endGame = 1;
-        }       
+        }
     }
     sread(player->sockfd, &msgChild, sizeof(msgChild));
     swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));
     int shm_id = sshmget(SHM_KEY, sizeof(Player) * MAX_PLAYERS, PERM);
     int sem_id = sem_get(SEM_KEY, 1);
     sem_down0(sem_id);
-    Player* shm_players = readPlayers(shm_id);
+    Player *shm_players = readPlayers(shm_id);
     msgChild.players = shm_players;
     msgChild.code = RANKING;
     swrite(player->sockfd, &msgChild, sizeof(msgChild));
-    
+    sem_up0(sem_id);
+
     sclose(player->sockfd);
     sclose(player->pipefdPC[0]);
     sclose(player->pipefdCP[1]);
 }
 
-int main(int argc, char **argv){
-    if (argc < 2){
+int main(int argc, char **argv)
+{
+    if (argc < 2)
+    {
         printf("Pour utiliser l'appli, veuillez rentrer en paramètre le numéro de port");
         exit(1);
     }
@@ -80,109 +87,128 @@ int main(int argc, char **argv){
     sockfd = initSocketServer(serverPort);
     printf("Le serveur tourne sur le port : %i \n", serverPort);
 
-    i= 0;
-    int nbPlayers = 0;
-
-    alarm(TIME_INSCRIPTION);
-    //Inscription des joueurs
-    while (!end_inscriptions)
+    /* blocage des signaux SIGUSR1, SIGALRM et SIGINT */
+    sigset_t blocked;
+    ssigemptyset(&blocked);
+    ssigaddset(&blocked, SIGUSR1);
+    ssigaddset(&blocked, SIGALRM);
+    ssigaddset(&blocked, SIGINT);
+    while (true)
     {
-        newsockfd = accept(sockfd,NULL,NULL);
-        if(newsockfd > 0)
+        i = 0;
+        int nbPlayers = 0;
+
+        alarm(TIME_INSCRIPTION);
+        // Inscription des joueurs
+        while (!end_inscriptions)
         {
-            ret = sread(newsockfd, &msg, sizeof(msg));
-            if (msg.code == INSCRIPTION_REQUEST)
+            newsockfd = accept(sockfd, NULL, NULL);
+            if (newsockfd > 0)
             {
-                printf("Inscription demandée par le joueur : %s\n", msg.messageText);
+                ret = sread(newsockfd, &msg, sizeof(msg));
+                if (msg.code == INSCRIPTION_REQUEST)
+                {
+                    printf("Inscription demandée par le joueur : %s\n", msg.messageText);
 
-                strcpy(tabPlayers[i].pseudo, msg.messageText);
-                tabPlayers[i].sockfd = newsockfd;
-                i++;
+                    strcpy(tabPlayers[i].pseudo, msg.messageText);
+                    tabPlayers[i].sockfd = newsockfd;
+                    i++;
 
-                if (nbPlayers < MAX_PLAYERS)
-				{
-					msg.code = INSCRIPTION_OK;
-					nbPlayers++;
-					if (nbPlayers == MAX_PLAYERS)
-					{
-						// cancel alarm
-						end_inscriptions = 1;
-					}
-				}
-                else{
-                    msg.code = INSCRIPTION_KO;
+                    if (nbPlayers < MAX_PLAYERS)
+                    {
+                        msg.code = INSCRIPTION_OK;
+                        nbPlayers++;
+                        if (nbPlayers == MAX_PLAYERS)
+                        {
+                            // cancel alarm
+                            end_inscriptions = 1;
+                        }
+                    }
+                    else
+                    {
+                        msg.code = INSCRIPTION_KO;
+                    }
+                    ret = swrite(newsockfd, &msg, sizeof(msg));
+                    printf("Nb Inscriptions : %i\n", nbPlayers);
                 }
-                ret = swrite(newsockfd, &msg, sizeof(msg));
-				printf("Nb Inscriptions : %i\n", nbPlayers);
-
             }
         }
-    }
 
-    printf("FIN DES INSCRIPTIONS\n");
-	if (nbPlayers <= 1)
-	{
-		printf("PARTIE ANNULEE .. PAS ASSEZ DE JOUEURS\n");
-		msg.code = CANCEL_GAME;
-		for (i = 0; i < nbPlayers; i++)
-		{
-			swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
-		}
-		disconnect_players(tabPlayers, nbPlayers);
-		sclose(sockfd);
-		exit(0);
-	}
-	else
-	{
-		printf("PARTIE VA DEMARRER ... \n");
-		msg.code = START_GAME;
-		for (i = 0; i < nbPlayers; i++)
-			swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
-	}
-    //initialisation des pipes et des processus
-    for(int i = 0; i < nbPlayers; i++){
-        
-
-        spipe(tabPlayers[i].pipefdPC);
-        spipe(tabPlayers[i].pipefdCP);
-
-        tabPids[i] = fork_and_run1(childHandler, &tabPlayers[i]);
-        
-        fds[i].fd = tabPlayers[i].pipefdCP[0];
-		fds[i].events = POLLIN;
-
-        sclose(tabPlayers[i].pipefdPC[0]);
-        sclose(tabPlayers[i].pipefdCP[1]);
-    }
-    //boucle du jeu
-    int* tabTiles = initRandomTiles(TILE_NUMBER);
-    printTable(tabTiles, NB_TILES);
-    for(int i = 0; i < NB_TILES; i++){
-        int nbResponse = 0;
-        for(int j = 0; j < nbPlayers; j++){
-            msg.messageInt = tabTiles[i];
-            msg.code = TILE;
-            swrite(tabPlayers[j].pipefdPC[1], &msg, sizeof(msg));
+        printf("FIN DES INSCRIPTIONS\n");
+        if (nbPlayers <= 1)
+        {
+            printf("PARTIE ANNULEE .. PAS ASSEZ DE JOUEURS\n");
+            msg.code = CANCEL_GAME;
+            for (i = 0; i < nbPlayers; i++)
+            {
+                swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
+            }
+            disconnect_players(tabPlayers, nbPlayers);
+            sclose(sockfd);
+            exit(0);
         }
-        printf("La tuile envoyée est %d\n", msg.messageInt);
-        while(nbResponse<nbPlayers){
-            ret = spoll(fds, nbPlayers, 1000);
-            nbResponse += ret;
+        else
+        {
+            printf("PARTIE VA DEMARRER ... \n");
+            msg.code = START_GAME;
+            for (i = 0; i < nbPlayers; i++)
+                swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
         }
-    }
-    for(int i = 0; i < nbPlayers; i++){
-        msg.code = END_GAME;
-        swrite(tabPlayers[i].pipefdPC[1], &msg, sizeof(msg));
-        sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
-        tabPlayers[i].score = msg.messageInt;
-        
-    }
-    //creation de la memoire partagée et des sémaphores
-    int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
-    int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
+        // initialisation des pipes et des processus
+        for (int i = 0; i < nbPlayers; i++)
+        {
 
-    Player* shm_players = readPlayers(shm_id);
+            spipe(tabPlayers[i].pipefdPC);
+            spipe(tabPlayers[i].pipefdCP);
 
-    createRanking(&shm_players, nbPlayers);
-    sem_up0(sem_id);
+            tabPids[i] = fork_and_run1(childHandler, &tabPlayers[i]);
+
+            fds[i].fd = tabPlayers[i].pipefdCP[0];
+            fds[i].events = POLLIN;
+
+            sclose(tabPlayers[i].pipefdPC[0]);
+            sclose(tabPlayers[i].pipefdCP[1]);
+        }
+        // ssigprocmask(SIG_BLOCK, &blocked, NULL);
+        // boucle du jeu
+        int *tabTiles = initRandomTiles(TILE_NUMBER);
+        printTable(tabTiles, NB_TILES);
+        for (int i = 0; i < NB_TILES; i++)
+        {
+            int nbResponse = 0;
+            for (int j = 0; j < nbPlayers; j++)
+            {
+                msg.messageInt = tabTiles[i];
+                msg.code = TILE;
+                swrite(tabPlayers[j].pipefdPC[1], &msg, sizeof(msg));
+            }
+            printf("La tuile envoyée est %d\n", msg.messageInt);
+            while (nbResponse < nbPlayers)
+            {
+                ret = spoll(fds, nbPlayers, 1000);
+                nbResponse += ret;
+            }
+        }
+        for (int i = 0; i < nbPlayers; i++)
+        {
+            msg.code = END_GAME;
+            swrite(tabPlayers[i].pipefdPC[1], &msg, sizeof(msg));
+            sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
+            tabPlayers[i].score = msg.messageInt;
+        }
+        // creation de la memoire partagée et des sémaphores
+        int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
+        int sem_id = initSemaphore(SEM_KEY, 1, IPC_CREAT | IPC_EXCL | PERM, 0);
+
+        Player *shm_players = readPlayers(shm_id);
+
+        createRanking(&shm_players, nbPlayers);
+        sem_up0(sem_id);
+
+        // desallocation des ressources
+        disconnect_players(tabPlayers, nbPlayers);
+        destroyShm(shm_id);
+        destroySemaphore(sem_id)
+        end_inscriptions = 0;
+    }
 }
