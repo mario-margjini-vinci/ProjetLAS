@@ -59,6 +59,6 @@ void printTable(int* plate, int size);
  * 
  * 
  */
-void createRanking(Player** players, int size);
+void createRanking(Player* players, int size);
 
 #endif

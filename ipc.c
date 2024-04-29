@@ -42,18 +42,21 @@ Player* readPlayers(int shm_id) {
         perror("Erreur lors de l'attachement à la mémoire partagée");
         exit(EXIT_FAILURE);
     }
-
+    printf("Mémoire partagée attachée avec succès !\n");
     Player * joueurs = shared_memory;
-
+/**
     if (shmdt(shared_memory) == -1) {
         perror("Erreur lors du détachement de la mémoire partagée");
         exit(EXIT_FAILURE);
     }
-
+*/
+    printf("Les joueurs ont bien été lus de la mémoire partagée!\n");
     return joueurs;
 }
 
 void destroyShm(int shm_id) {
+    void* shared_memory = shmat(shm_id, NULL, 0);
+    sshmdt(shared_memory);
     sshmdelete(shm_id);
     printf("Mémoire partagée supprimée avec succès !\n");
 }

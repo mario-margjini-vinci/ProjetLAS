@@ -19,6 +19,7 @@ typedef enum
   END_GAME = 16,
   RANKING = 17,
   TILE_PLACED = 18,
+  MEMORY_READ = 19
 } Code;
 
 typedef struct Player

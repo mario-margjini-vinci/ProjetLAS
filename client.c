@@ -78,12 +78,13 @@ int main(int argc, char *argv[])
         // lecture du classement
         sread(sockfd, &msg, sizeof(msg));
         printf("Voici le classement final:\n");
+        printf("%d\n",msg.messageInt);
         for (int i = 0; i<msg.messageInt; i++){
-            printf("%d)%s\n", (i+1), msg.players[i].pseudo);
+            printf("%d)%s\n", (i+1),msg.players[i].pseudo);
         }
-
+        msg.code = MEMORY_READ;
+        swrite(sockfd, &msg, sizeof(msg));
     }
-
     sclose(sockfd); //le fermer à la fin de la partie
     return 0;
 }
