@@ -13,6 +13,16 @@
  */
 int* initRandomTiles(int nTiles);
 
+
+/**
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
+void initRandomTilesWithFile(char* fileName);
+
 /**
  * 
  * 

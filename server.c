@@ -92,6 +92,9 @@ int main(int argc, char **argv)
         printf("Pour utiliser l'appli, veuillez rentrer en paramètre le numéro de port");
         exit(1);
     }
+    if (argc == 3){
+        initRandomTilesWithFile(argv[2]);
+    }
     int sockfd, newsockfd, i;
     Message msg;
     int ret;
@@ -191,7 +194,11 @@ int main(int argc, char **argv)
         // boucle du jeu
 
         // creation de la memoire partagée et des sémaphores
-        int *tabTiles = initRandomTiles(TILE_NUMBER);
+        int *tabTiles;
+        if (argc == 2){
+            tabTiles = initRandomTiles(TILE_NUMBER);
+        }
+        tabTiles = initRandomTiles(TILE_NUMBER);
         printTable(tabTiles, NB_TILES);
         for (int i = 0; i < NB_TILES; i++)
         {

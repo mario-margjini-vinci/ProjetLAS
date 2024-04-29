@@ -27,8 +27,11 @@ int main(int argc, char *argv[])
     printf("Bienvenue dans le programe d'inscription au serveur de jeu\n");
     printf("Pour participer entrez votre nom :\n");
     Message msg;
-    int ret = sread(0, msg.messageText, MAX_TEXT);
-    msg.messageText[ret - 1] = '\0';
+    // int ret = sread(0, msg.messageText, MAX_TEXT);
+    char* bufferPseudo = readLine();
+
+    strncpy(msg.messageText, bufferPseudo, sizeof(msg.messageText));
+    free(bufferPseudo);
     msg.code = INSCRIPTION_REQUEST;
 
     int sockfd = initSocketClient(SERVER_IP, serverPort);
@@ -59,12 +62,14 @@ int main(int argc, char *argv[])
                 printTable(plate, PLATE_SIZE);
                 printf("%s\n", "Entrez la position de cette tuile sur votre plateau:");
                 char* buffer = readLine();
+                printf("%s\n", buffer);
                 int position = atoi(buffer);
-                int correctPos = placeTile(position, msg.messageInt, plate, PLATE_SIZE);
+                int correctPos = placeTile(position-1, msg.messageInt, plate, PLATE_SIZE);
                 printf("La tuile a été placée à la position %d\n", correctPos);
                 msg.tilePlaced = true;
                 msg.code = TILE_PLACED;
                 swrite(sockfd, &msg, sizeof(msg));
+                free(buffer);
             }
         }
         printf("%s\n", "La partie est terminée");

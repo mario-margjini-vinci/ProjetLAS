@@ -9,6 +9,9 @@
 #define NB_TILES 40
 #define NB_TILES_TO_PLAY 20
 #define POINTS_CHECK 20
+#define PERM 0666
+
+FILE *fin = NULL;
 
 static int tabCalc[POINTS_CHECK] = {0,1,3,5,7,9,11,15,20,25,30,35,40,50,60,70,85,100,150,300};
 static int tiles[NB_TILES] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -20,10 +23,6 @@ static int tiles[NB_TILES] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
 int* initPlate(int size){
     int* plate = smalloc(size *sizeof(int));
     return plate;
-    // int* plate;
-    // plate = (int*) malloc(size * sizeof(int));
-    // // /!\ tester la valeur renvoyée => si null exit(1)
-    // return plate;
 }
 
 int* initRandomTiles(int nTiles){
@@ -47,12 +46,26 @@ int* initRandomTiles(int nTiles){
     return randomTiles;
 }
 
+void initRandomTilesWithFile(char* fileName){
+    if ((fin = fopen(fileName, "rb")) == NULL){
+        perror("Erreur d'ouverture de fichier en lecture");
+    }
+    // int* randomTiles = (int*) smalloc(NB_TILES_TO_PLAY * sizeof(int));
+    int buffer[NB_TILES_TO_PLAY];
+    fread(buffer, sizeof(int), NB_TILES_TO_PLAY, fin);
+    for (int i = 0; i < NB_TILES_TO_PLAY; i++)
+    {
+        printf("%d\n", buffer[i]);
+    }
+    fclose(fin);
+}
+
 int placeTile(int pos, int tile, int* plate, int size){
     while (plate[pos%size] != 0){
         pos++;
     }
     plate[pos%size] = tile;
-    return pos%size;
+    return (pos+1)%size;
 }
 
 
@@ -87,8 +100,6 @@ void createRanking(Player* players, int size) {
     for (i = 1; i < size; i++) {
         Player key = players[i];
         j = i - 1;
-        // Déplacement des éléments du tableau[0..i-1], qui sont plus grands que la clé,
-        // vers une position à l'avant de leur position actuelle
         while (j >= 0 && players[j].score < key.score) {
             players[j + 1] = players[j];
             j = j - 1;
