@@ -95,5 +95,4 @@ void createRanking(Player* players, int size) {
         }
         players[j + 1] = key;
     }
-    printf("Le classement a bien été créé !\n");
 }

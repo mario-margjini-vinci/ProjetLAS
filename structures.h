@@ -5,6 +5,7 @@
 
 #define MAX_PSEUDO 256
 #define MAX_TEXT 256
+#define MAX_CLASSEMENT 10000
 
 #define SERVER_IP "127.0.0.1" /* localhost */
 
@@ -38,6 +39,7 @@ typedef struct Message
     int code;
     bool tilePlaced;
     Player *players;
+    char classement[MAX_CLASSEMENT];
 } Message;
 
 #endif

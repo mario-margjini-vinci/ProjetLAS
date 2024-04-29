@@ -14,12 +14,14 @@
 
 #define MAX_WAITING 100
 #define MAX_PLAYERS 10
-#define NB_TILES 20
+#define NB_TILES 2
 #define TIME_INSCRIPTION 30
 #define TILE_NUMBER 20
 #define SHM_KEY 1234
 #define SEM_KEY 619
 #define PERM 0666
+#define MAX_PSEUDO 256
+#define MAX_BUFFER 1000
 
 Player tabPlayers[MAX_PLAYERS];
 pid_t tabPids[MAX_PLAYERS];
@@ -62,11 +64,17 @@ void childHandler(void *arg1, void *arg2)
     swrite(player->pipefdCP[1], &msgChild, sizeof(msgChild));
     int sem_id = sem_get(SEM_KEY, 1);
     sem_down0(sem_id);
+
     int shm_id = sshmget(SHM_KEY, sizeof(Player) * MAX_PLAYERS, PERM);
     Player *shm_players = readPlayers(shm_id);
-    msgChild.players = shm_players;
     msgChild.code = RANKING;
     msgChild.messageInt = *nbPlayers;
+    char buffer[MAX_BUFFER];
+    for (int i = 0; i < *nbPlayers; i++)
+    {
+        sprintf(buffer, "%d) %s - %d\n", (i+1), shm_players[i].pseudo, shm_players[i].score);
+        strcat(msgChild.classement, buffer);
+    }
     // envoie du classement
     swrite(player->sockfd, &msgChild, sizeof(msgChild));
     sem_up0(sem_id);
@@ -103,6 +111,7 @@ int main(int argc, char **argv)
     ssigaddset(&blocked, SIGINT);
     while (true)
     {
+        ssigprocmask(SIG_UNBLOCK, &blocked, NULL);
         end_inscriptions = 0;
         i = 0;
         int nbPlayers = 0;
@@ -178,7 +187,7 @@ int main(int argc, char **argv)
             sclose(tabPlayers[i].pipefdPC[0]);
             sclose(tabPlayers[i].pipefdCP[1]);
         }
-        // ssigprocmask(SIG_BLOCK, &blocked, NULL);
+        ssigprocmask(SIG_BLOCK, &blocked, NULL);
         // boucle du jeu
 
         // creation de la memoire partagée et des sémaphores
@@ -211,6 +220,7 @@ int main(int argc, char **argv)
             // reception des scores
             sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
             printf("%d\n",msg.messageInt);
+            tabPlayers[i].score = msg.messageInt;
             // shm_players[i].score = msg.messageInt;
         }
 
@@ -226,11 +236,11 @@ int main(int argc, char **argv)
         sem_up0(sem_id);
 
         for (int i = 0; i < nbPlayers; i++){
-
             sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
-            printf("%s a fini de lire la memoire\n",tabPlayers[i].pseudo);
+            // printf("%s a fini de lire la memoire\n",tabPlayers[i].pseudo);
         }
         // desallocation des ressources
+        free(tabTiles);
         disconnect_players(tabPlayers, nbPlayers);
         destroyShm(shm_id);
         destroySemaphore(sem_id);
