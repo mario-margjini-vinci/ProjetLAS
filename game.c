@@ -14,7 +14,6 @@
 #define NB_TILES_TO_PLAY 20
 #define POINTS_CHECK 20
 #define PERM 0666
-#define MAX_LINE_LENGTH 10
 #define MAX_FILE_LENGTH 60
 
 FILE *file = NULL;
@@ -52,38 +51,16 @@ int* initRandomTiles(int nTiles){
     return randomTiles;
 }
 
-int* initRandomTilesWithFile(FILE * file){
-    // int fd = sopen(fileName, O_RDONLY, 0200);
-    int* buffer = (int*) smalloc(MAX_FILE_LENGTH * sizeof(int));
-    // char** tab = readFileToTable(fd);
-    // for (int i = 0; i < NB_TILES_TO_PLAY; i++)
-    // {
-    //     buffer[i] = atoi(tab[i]);
-    //     free(tab[i]);
-    // }
-    // free (tab);
-    // return buffer;
-    char ligne[MAX_LINE_LENGTH];
-    // file = fopen(fileName, "r");
-    if (file == NULL){
-        perror("Erreur lors de l'ouverture du fichier");
-        return NULL;
+int* initRandomTilesWithFile(char* fileName){
+    int fd = sopen(fileName, O_RDONLY, 0200);
+    int* buffer = (int*) smalloc(NB_TILES_TO_PLAY * sizeof(int));
+    char** tab = readFileToTable(fd);
+    for (int i = 0; i < NB_TILES_TO_PLAY; i++)
+    {
+        buffer[i] = atoi(tab[i]);
+        free(tab[i]);
     }
-    int i = 0;
-    long int position = ftell(file);
-    while (fgets(ligne, MAX_LINE_LENGTH, file) != NULL) {
-        char* ptr = strchr(ligne, '\n');
-        if (ptr != NULL){
-            *ptr = '\0';
-        }
-        buffer[i] = atoi(ligne);
-        position = ftell(file);
-        i++;
-    }
-    fseek(file, position, SEEK_SET);
-    if(feof(file)){
-        fclose(file);
-    }
+    free (tab);
     return buffer;
 }
 
@@ -101,7 +78,7 @@ int getScore(int* plate, int size){
     int suite = 1;
     for (int i = 1; i < size; ++i)
     {
-        if (plate[i]>plate[i-1] || plate[i] == 31 || plate[i-1] == 31)
+        if ((plate[i]>=plate[i-1] && plate[i] != 31) || plate[i-1] == 31)
         {
             suite++;
         }

@@ -27,7 +27,6 @@ int main(int argc, char *argv[])
     printf("Bienvenue dans le programe d'inscription au serveur de jeu\n");
     printf("Pour participer entrez votre nom :\n");
     Message msg;
-    // int ret = sread(0, msg.messageText, MAX_TEXT);
     char* bufferPseudo = readLine();
 
     strncpy(msg.messageText, bufferPseudo, sizeof(msg.messageText));
@@ -50,7 +49,7 @@ int main(int argc, char *argv[])
         while(msg.code != END_GAME){
             sread(sockfd, &msg, sizeof(msg));
             if (msg.code == START_GAME){
-                printf("%s\n", "La partie commence");
+                printf("%s\n\n", "La partie commence");
             }
             else if (msg.code == CANCEL_GAME){
                 printf("%s\n", "La partie est annulée");
@@ -58,11 +57,10 @@ int main(int argc, char *argv[])
                 exit(0);
             }
             else if (msg.code == TILE){
-                printf("Vous avez reçu la tuile %d\n", msg.messageInt);
-                printTable(plate, PLATE_SIZE);
+                printf("\nVous avez reçu la tuile %d\n", msg.messageInt);
                 printf("%s\n", "Entrez la position de cette tuile sur votre plateau:");
+                printTable(plate, PLATE_SIZE);
                 char* buffer = readLine();
-                printf("%s\n", buffer);
                 int position = atoi(buffer);
                 int correctPos = placeTile(position-1, msg.messageInt, plate, PLATE_SIZE);
                 printf("La tuile a été placée à la position %d\n", correctPos);
@@ -72,6 +70,7 @@ int main(int argc, char *argv[])
                 free(buffer);
             }
         }
+        printTable(plate, PLATE_SIZE);
         printf("%s\n", "La partie est terminée");
         int score = getScore(plate, PLATE_SIZE);
         printf("Votre score est de %d\n", score);

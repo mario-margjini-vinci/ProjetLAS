@@ -5,8 +5,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include "structures.h"
 #include "utils_v1.h"
@@ -111,10 +109,6 @@ int main(int argc, char **argv)
     ssigaddset(&blocked, SIGUSR1);
     ssigaddset(&blocked, SIGALRM);
     ssigaddset(&blocked, SIGINT);
-    FILE* file;
-    if (argc == 3){
-        file = fopen(argv[2], "r");
-    }
     while (true)
     {
         ssigprocmask(SIG_UNBLOCK, &blocked, NULL);
@@ -124,6 +118,7 @@ int main(int argc, char **argv)
 
         alarm(TIME_INSCRIPTION);
         // Inscription des joueurs
+        printf("%s\n", "PHASE D'INSCRIPTION");
         while (!end_inscriptions)
         {
             newsockfd = accept(sockfd, NULL, NULL);
@@ -167,9 +162,7 @@ int main(int argc, char **argv)
             {
                 swrite(tabPlayers[i].sockfd, &msg, sizeof(msg));
             }
-            disconnect_players(tabPlayers, nbPlayers);
-            //sclose(sockfd);
-            continue;
+            disconnect_players(tabPlayers, nbPlayers);            continue;
         }
         else
         {
@@ -200,12 +193,11 @@ int main(int argc, char **argv)
             tabTiles = initRandomTiles(TILE_NUMBER);
         }
         if (argc == 3){
-            tabTiles = initRandomTilesWithFile(file);
-            if (tabTiles == NULL)
-                exit(1);
+            tabTiles = initRandomTilesWithFile(argv[2]);
         }
         // creation de la memoire partagée et des sémaphores
         printTable(tabTiles, NB_TILES);
+
         for (int i = 0; i < NB_TILES; i++)
         {
             int nbResponse = 0;
@@ -232,25 +224,20 @@ int main(int argc, char **argv)
             swrite(tabPlayers[i].pipefdPC[1], &msg, sizeof(msg));
             // reception des scores
             sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
-            printf("%d\n",msg.messageInt);
             tabPlayers[i].score = msg.messageInt;
-            // shm_players[i].score = msg.messageInt;
         }
 
 
         int shm_id = createPlayers(SHM_KEY, sizeof(Player) * MAX_PLAYERS, IPC_CREAT | IPC_EXCL | PERM, tabPlayers, nbPlayers);
        
         Player *shm_players = readPlayers(shm_id);
-        printf("%s\n",shm_players[0].pseudo);
 
         createRanking(shm_players, nbPlayers);
-        printf("%s\n",shm_players[0].pseudo);
 
         sem_up0(sem_id);
 
         for (int i = 0; i < nbPlayers; i++){
             sread(tabPlayers[i].pipefdCP[0], &msg, sizeof(msg));
-            // printf("%s a fini de lire la memoire\n",tabPlayers[i].pseudo);
         }
         // desallocation des ressources
         free(tabTiles);

@@ -18,7 +18,7 @@ int* initRandomTiles(int nTiles);
  * RES:  return a pointer to the first tile
  * 
  */
-int* initRandomTilesWithFile(FILE* file);
+int* initRandomTilesWithFile(char* fileName);
 
 /**
  * PRE: size: the size of the plate
