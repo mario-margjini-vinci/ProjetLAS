@@ -21,7 +21,7 @@ int* initRandomTiles(int nTiles);
  * 
  * 
  */
-int* initRandomTilesWithFile(char* fileName);
+int* initRandomTilesWithFile(FILE* file);
 
 /**
  * 

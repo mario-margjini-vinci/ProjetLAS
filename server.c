@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "structures.h"
 #include "utils_v1.h"
@@ -109,6 +111,10 @@ int main(int argc, char **argv)
     ssigaddset(&blocked, SIGUSR1);
     ssigaddset(&blocked, SIGALRM);
     ssigaddset(&blocked, SIGINT);
+    FILE* file;
+    if (argc == 3){
+        file = fopen(argv[2], "r");
+    }
     while (true)
     {
         ssigprocmask(SIG_UNBLOCK, &blocked, NULL);
@@ -194,7 +200,9 @@ int main(int argc, char **argv)
             tabTiles = initRandomTiles(TILE_NUMBER);
         }
         if (argc == 3){
-            tabTiles = initRandomTilesWithFile(argv[2]);
+            tabTiles = initRandomTilesWithFile(file);
+            if (tabTiles == NULL)
+                exit(1);
         }
         // creation de la memoire partagée et des sémaphores
         printTable(tabTiles, NB_TILES);

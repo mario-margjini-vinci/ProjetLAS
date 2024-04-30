@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "game.h"
 #include "structures.h"
@@ -13,8 +14,10 @@
 #define NB_TILES_TO_PLAY 20
 #define POINTS_CHECK 20
 #define PERM 0666
+#define MAX_LINE_LENGTH 10
+#define MAX_FILE_LENGTH 60
 
-FILE *fin = NULL;
+FILE *file = NULL;
 
 static int tabCalc[POINTS_CHECK] = {0,1,3,5,7,9,11,15,20,25,30,35,40,50,60,70,85,100,150,300};
 static int tiles[NB_TILES] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -49,16 +52,38 @@ int* initRandomTiles(int nTiles){
     return randomTiles;
 }
 
-int* initRandomTilesWithFile(char* fileName){
-    int fd = sopen(fileName, O_RDONLY, 0200);
-    int* buffer = (int*) smalloc(NB_TILES_TO_PLAY * sizeof(int));
-    char** tab = readFileToTable(fd);
-    for (int i = 0; i < NB_TILES_TO_PLAY; i++)
-    {
-        buffer[i] = atoi(tab[i]);
-    }
-    // free tab avec double boucle
+int* initRandomTilesWithFile(FILE * file){
+    // int fd = sopen(fileName, O_RDONLY, 0200);
+    int* buffer = (int*) smalloc(MAX_FILE_LENGTH * sizeof(int));
+    // char** tab = readFileToTable(fd);
+    // for (int i = 0; i < NB_TILES_TO_PLAY; i++)
+    // {
+    //     buffer[i] = atoi(tab[i]);
+    //     free(tab[i]);
+    // }
     // free (tab);
+    // return buffer;
+    char ligne[MAX_LINE_LENGTH];
+    // file = fopen(fileName, "r");
+    if (file == NULL){
+        perror("Erreur lors de l'ouverture du fichier");
+        return NULL;
+    }
+    int i = 0;
+    long int position = ftell(file);
+    while (fgets(ligne, MAX_LINE_LENGTH, file) != NULL) {
+        char* ptr = strchr(ligne, '\n');
+        if (ptr != NULL){
+            *ptr = '\0';
+        }
+        buffer[i] = atoi(ligne);
+        position = ftell(file);
+        i++;
+    }
+    fseek(file, position, SEEK_SET);
+    if(feof(file)){
+        fclose(file);
+    }
     return buffer;
 }
 
