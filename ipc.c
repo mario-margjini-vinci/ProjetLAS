@@ -13,7 +13,7 @@
 int createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers) {
     int shm_id;
 
-    //Créa mémoire
+    //Init shared memory
     shm_id = sshmget(key, size, shmflg);
     // printf("Mémoire partagée créée avec succès !\n");
 
@@ -22,7 +22,7 @@ int createPlayers(key_t key, size_t size, int shmflg, Player *p, int nbPlayers) 
     // printf("Mémoire partagée attachée !\n");
 
     
-    //Copie des joueurs dans la memémoire
+    //Copy of the players in the memory
     memcpy(shm_players, p, sizeof(Player)*nbPlayers);
     
 
@@ -64,7 +64,7 @@ void destroyShm(int shm_id) {
 int initSemaphore(key_t key, int nsems, int perm, int val) {
     
     int sem_id = sem_create(key, nsems, perm, val);
-    // rintf("Ensemble de sémaphores initialisé avec succès !\n");
+    // printf("Ensemble de sémaphores initialisé avec succès !\n");
 
     return sem_id;
 }
