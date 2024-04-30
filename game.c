@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "game.h"
 #include "structures.h"
@@ -46,18 +49,17 @@ int* initRandomTiles(int nTiles){
     return randomTiles;
 }
 
-void initRandomTilesWithFile(char* fileName){
-    if ((fin = fopen(fileName, "rb")) == NULL){
-        perror("Erreur d'ouverture de fichier en lecture");
-    }
-    // int* randomTiles = (int*) smalloc(NB_TILES_TO_PLAY * sizeof(int));
-    int buffer[NB_TILES_TO_PLAY];
-    fread(buffer, sizeof(int), NB_TILES_TO_PLAY, fin);
+int* initRandomTilesWithFile(char* fileName){
+    int fd = sopen(fileName, O_RDONLY, 0200);
+    int* buffer = (int*) smalloc(NB_TILES_TO_PLAY * sizeof(int));
+    char** tab = readFileToTable(fd);
     for (int i = 0; i < NB_TILES_TO_PLAY; i++)
     {
-        printf("%d\n", buffer[i]);
+        buffer[i] = atoi(tab[i]);
     }
-    fclose(fin);
+    // free tab avec double boucle
+    // free (tab);
+    return buffer;
 }
 
 int placeTile(int pos, int tile, int* plate, int size){

@@ -14,7 +14,7 @@
 
 #define MAX_WAITING 100
 #define MAX_PLAYERS 10
-#define NB_TILES 2
+#define NB_TILES 20
 #define TIME_INSCRIPTION 30
 #define TILE_NUMBER 20
 #define SHM_KEY 1234
@@ -91,9 +91,6 @@ int main(int argc, char **argv)
     {
         printf("Pour utiliser l'appli, veuillez rentrer en paramètre le numéro de port");
         exit(1);
-    }
-    if (argc == 3){
-        initRandomTilesWithFile(argv[2]);
     }
     int sockfd, newsockfd, i;
     Message msg;
@@ -192,13 +189,14 @@ int main(int argc, char **argv)
         }
         ssigprocmask(SIG_BLOCK, &blocked, NULL);
         // boucle du jeu
-
-        // creation de la memoire partagée et des sémaphores
         int *tabTiles;
         if (argc == 2){
             tabTiles = initRandomTiles(TILE_NUMBER);
         }
-        tabTiles = initRandomTiles(TILE_NUMBER);
+        if (argc == 3){
+            tabTiles = initRandomTilesWithFile(argv[2]);
+        }
+        // creation de la memoire partagée et des sémaphores
         printTable(tabTiles, NB_TILES);
         for (int i = 0; i < NB_TILES; i++)
         {
